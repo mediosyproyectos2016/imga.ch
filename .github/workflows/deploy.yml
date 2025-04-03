@@ -1,27 +1,33 @@
-name: Deploy to AWS
+name: Bornan GitHub Actions Workflow to replace content to S3
 
 on:
   push:
     branches:
-      - master
+      - main  
 
 jobs:
-  deploy:
+  upload_to_s3:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Deploy to AWS
-      run: |
-        # Add your deployment commands here
-        # For example, if you are using AWS CLI to deploy a Lambda function:
-        aws lambda update-function-code --function-name my-function --zip-file fileb://function.zip
+      - name: Delete all files from S3 bucket
+        run: |
+          aws s3 rm s3://$S3_BUCKET_NAME/ --recursive
+        env:
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+
+      - name: Upload files to S3
+        run: |
+          aws s3 cp . s3://$S3_BUCKET_NAME/ --recursive
+        env:
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
